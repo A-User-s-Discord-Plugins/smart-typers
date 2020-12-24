@@ -1,8 +1,8 @@
 /* eslint-disable object-property-newline */
-const { Plugin } = require('powercord/entities');
-const { React, getModuleByDisplayName, getModule, contextMenu, i18n: { _proxyContext: { defaultMessages }, Messages }, constants } = require('powercord/webpack');
-const { findInReactTree } = require('powercord/util');
-const { inject, uninject } = require('powercord/injector');
+const { Plugin } = require('@vizality/entities');
+const { React, getModuleByDisplayName, getModule, contextMenu, i18n: { _proxyContext: { defaultMessages }, Messages }, constants } = require('@vizality/webpack');
+const { react: { findInReactTree } } = require('@vizality/util');
+const { patch, unpatch } = require('@vizality/patcher');
 
 const TypingUsersWithAvatars = require('./components/TypingUsersWithAvatars');
 const Settings = require('./components/Settings');
@@ -21,24 +21,24 @@ module.exports = class SmartTypers extends Plugin {
     return window.DiscordNative.crashReporter.getMetadata().user_id;
   }
 
-  async startPlugin () {
-    this.loadStylesheet('style.css');
-    powercord.api.i18n.loadAllStrings(i18n);
-    powercord.api.settings.registerSettings('smart-typers', {
-      category: this.entityID,
-      label: 'Smart Typers',
+  async onStart () {
+    this.injectStyles('style.css');
+    vizality.api.i18n.injectAllStrings(i18n);
+    vizality.api.settings.registerAddonSettings({
+      id: this.addonId,
+      heading: 'Smart Typers',
       render: (props) => React.createElement(Settings, {
         main: this,
         ...props
       })
-    });
+    })
 
-    const { getSetting } = powercord.api.settings._fluxProps(this.entityID);
+    const { getSetting } = vizality.api.settings._fluxProps(this.addonId);
 
-    this.getModule('parser', [ 'parse', 'parseTopic' ]);
-    this.getModule('classes', [ 'typing', 'ellipsis' ]);
+    this.getModule('parser', ['parse', 'parseTopic']);
+    this.getModule('classes', ['typing', 'ellipsis']);
     this.getModule('relationshipStore', 'getRelationships');
-    this.getModule('memberStore', [ 'initialize', 'getMember' ]);
+    this.getModule('memberStore', ['initialize', 'getMember']);
     this.getModule('userStore', 'getCurrentUser');
     this.getModule('usernameUtils', 'getName');
     this.getModule('i18nParser', 'getMessage');
@@ -47,8 +47,9 @@ module.exports = class SmartTypers extends Plugin {
 
     const _this = this;
     const TypingUsers = (await getModuleByDisplayName('FluxContainer(TypingUsers)')).prototype.render.call({ memoizedGetStateFromStores: () => ({}) }).type;
-    inject('smartTypers-logic', TypingUsers.prototype, 'render', function (_, res) {
+    patch('smartTypers-logic', TypingUsers.prototype, 'render', function (_, res) {
       const maxTypingUsers = getSetting('maxTypingUsers', 3);
+      // if (maxTypingUsers === 22) maxTypingUsers = 1000000000 // "infinity"
       const filteredTypingUsers = Object.keys(this.props.typingUsers)
         .filter(id => /* selfTyping ? id : */ id !== _this.currentUserId)
         .filter(id => !_this.modules.relationshipStore.isBlocked(id))
@@ -77,11 +78,14 @@ module.exports = class SmartTypers extends Plugin {
         /* Typing Users with Avatars */
         const showUserAvatars = getSetting('userAvatars', false);
         if (showUserAvatars) {
+          const typingUsersContainerChildren = typingUsersContainer.props.children;
+          const typingMessage = typingUsersContainerChildren[typingUsersContainerChildren.length - 1];
+
           res.props.children[1] = React.createElement(TypingUsersWithAvatars, {
             main: _this,
             channel: this.props.channel,
             typingUsers: filteredTypingUsers
-          }, translations.typing);
+          }, typingMessage !== '.' ? typingMessage : translations.typing);
         }
 
         /* Additional Users */
@@ -177,12 +181,14 @@ module.exports = class SmartTypers extends Plugin {
 
               userElement.props.children = (splitUsername.length > 0 ? splitUsername : [ _this.normalizeUsername(user.username, true) ]).map(substring => {
                 const parseFormat = _this.modules.parser.reactParserFor(_this.getCustomRules());
-                if (!_this.getEmojiRegex(true).test(substring) && getSetting('colorGradient', false) && member.colorString) {
+                if (!_this.getEmojiRegex(true).test(substring) && getSetting('color', false) && member.colorString) {
+                  let secondaryColor = _this.shadeColor(member.colorString, 75)
+                  if (!getSetting('colorGradient', false)) secondaryColor = member.colorString
                   return React.createElement('span', {
                     className: 'gradient',
                     style: {
                       '--smartTypers-primary': member.colorString,
-                      '--smartTypers-secondary': _this.shadeColor(member.colorString, 75)
+                      '--smartTypers-secondary': secondaryColor
                     }
                   }, substring);
                 }
@@ -212,9 +218,9 @@ module.exports = class SmartTypers extends Plugin {
     /*
      * const typingUsersStore = this.getModule('typingUsersStore', 'getTypingUsers');
      * const channelStore = this.getModule('channelStore', 'getLastSelectedChannelId');
-     * const userStore = await getModule([ 'getCurrentUser' ]);
+     * const userStore = await getModule( 'getCurrentUser' );
      *
-     * inject('smartTypers-self', userStore, 'getNullableCurrentUser', (_, res) => {
+     * patch('smartTypers-self', userStore, 'getNullableCurrentUser', (_, res) => {
      * if (selfTyping) {
      *  if (typingUsersStore.isTyping(channelStore.getChannelId(), this.currentUserId)) {
      *    return null;
@@ -226,24 +232,23 @@ module.exports = class SmartTypers extends Plugin {
      */
   }
 
-  pluginWillUnload () {
-    powercord.api.settings.unregisterSettings('smart-typers');
+  onStop () {
+    vizality.api.settings.unregisterSettings('smart-typers');
 
-    uninject('smartTypers-logic');
-    uninject('smartTypers-self');
+    unpatch('smartTypers-logic');
+    unpatch('smartTypers-self');
   }
 
   handleUserClick (user, channel, event) {
     if (channel.id !== '1337' && this.settings.get('userShiftClick', true) && event.shiftKey) {
-      const { ComponentDispatch } = getModule([ 'ComponentDispatch' ], false);
+      const { ComponentDispatch } = getModule( 'ComponentDispatch' , false);
       return ComponentDispatch.dispatchToLastSubscribed(constants.ComponentActions.INSERT_TEXT, {
         content: `<@${user.id}>`
       });
     }
 
     const UserPopout = getModuleByDisplayName('UserPopout', false);
-    const PopoutDispatcher = getModule([ 'openPopout' ], false);
-    const guildId = channel.guild_id;
+    const PopoutDispatcher = getModule( 'openPopout' , false);
 
     if (this.settings.get('userPopout', true) && event.target) {
       PopoutDispatcher.openPopout(event.target, {
@@ -252,7 +257,7 @@ module.exports = class SmartTypers extends Plugin {
         render: (props) => React.createElement(UserPopout, {
           ...props,
           userId: user.id,
-          guildId
+          guildId: channel.guild_id
         }),
         shadow: false,
         position: 'bottom'
@@ -267,27 +272,23 @@ module.exports = class SmartTypers extends Plugin {
     const GuildChannelUserContextMenu = getModuleByDisplayName('GuildChannelUserContextMenu', false);
 
     if (this.settings.get('userContextMenu', true)) {
-      if (!guildId) {
-        return contextMenu.openContextMenu(event, (props) => React.createElement(GroupDMUserContextMenu, {
-          ...props,
-          user,
-          channel
-        }));
-      }
-
-      contextMenu.openContextMenu(event, (props) => React.createElement(GuildChannelUserContextMenu, {
-        ...props,
-        user,
+      const UserContextMenu = guildId ? GuildChannelUserContextMenu : GroupDMUserContextMenu;
+      const defaultProps = Object.assign({ user }, guildId ? {
         guildId,
         channelId: channel.id,
         showMediaItems: false,
         popoutPosition: 'top'
+      } : { channel });
+
+      return contextMenu.openContextMenu(event, (props) => React.createElement(UserContextMenu, {
+        ...props,
+        ...defaultProps
       }));
     }
   }
 
   getEmojiRegex (global) {
-    return new RegExp(/(\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|[\u2702-\u27b0])/, global ? 'g' : '');
+    return new RegExp(/(\p{Emoji_Presentation})/, global ? 'ug' : 'u');
   }
 
   getInvisibleRegex (global) {
@@ -318,7 +319,7 @@ module.exports = class SmartTypers extends Plugin {
       displayName
     };
 
-    return userFormat.replace(/^\*\*(.*)\*\*$/, '$1').replace(/{([\s\S]+?)}/g, (_, key) => variables[key]);
+    return userFormat.replace(/\*\*(.+?)\*\*/g, '$1').replace(/{([\s\S]+?)}/g, (_, key) => variables[key]);
   }
 
   shadeColor (color, percent) {
@@ -348,7 +349,7 @@ module.exports = class SmartTypers extends Plugin {
     }
 
     if (!this.modules[id]) {
-      const mod = getModule(filter, false);
+      const mod = getModule(...filter);
       if (mod) {
         this.modules[id] = mod;
       } else {

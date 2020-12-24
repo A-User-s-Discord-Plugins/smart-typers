@@ -1,5 +1,5 @@
-const { React, getModule, getModuleByDisplayName } = require('powercord/webpack');
-const { Card } = require('powercord/components');
+const { React, getModule, getModuleByDisplayName } = require('@vizality/webpack');
+const { Card } = require('@vizality/components');
 
 module.exports = class Preview extends React.PureComponent {
   constructor () {

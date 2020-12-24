@@ -1,6 +1,6 @@
-const { React, i18n: { _proxyContext: { defaultMessages }, Messages }, getModuleByDisplayName } = require('powercord/webpack');
-const { AsyncComponent, FormTitle, Flex, Button } = require('powercord/components');
-const { SwitchItem, SliderInput } = require('powercord/components/settings');
+const { React, i18n: { _proxyContext: { defaultMessages }, Messages }, getModuleByDisplayName } = require('@vizality/webpack');
+const { AsyncComponent, FormTitle, Flex, Button } = require('@vizality/components');
+const { SwitchItem, SliderInput } = require('@vizality/components/settings');
 
 const Preview = require('./Preview');
 const TextInputWithButton = require('./TextInputWithButton');
@@ -15,13 +15,13 @@ module.exports = class Settings extends React.PureComponent {
     };
 
     this.checkForOverrides = () => {
-      const settingsTabs = powercord.api.settings.tabs;
+      const settingsTabs = vizality.api.settings.tabs;
       const hasRoleColorEverywhere = settingsTabs.hasOwnProperty('rceverywhere');
       if (hasRoleColorEverywhere) {
         const tab = settingsTabs.rceverywhere;
-        const fluxProps = powercord.api.settings._fluxProps(tab.category);
+        const fluxProps = vizality.api.settings._fluxProps(tab.category);
         if (fluxProps.getSetting('typing', true)) {
-          powercord.api.settings._fluxProps(tab.category).updateSetting('typing', false);
+          vizality.api.settings._fluxProps(tab.category).updateSetting('typing', false);
         }
       }
     };
@@ -59,6 +59,20 @@ module.exports = class Settings extends React.PureComponent {
         {Messages.SMART_TYPERS.HIDE_EMOJIS}
       </SwitchItem>
       <SwitchItem
+        note={Messages.SMART_TYPERS.COLORED_DESC}
+        value={getSetting('color', false)}
+        onChange={(checked) => {
+          if (checked) {
+            this.checkForOverrides();
+          }
+
+          return toggleSetting('color', false);
+        }}
+        disabled={getSetting('userAvatars', false)}
+      >
+        {Messages.SMART_TYPERS.COLORED}
+      </SwitchItem>
+      <SwitchItem
         note={Messages.SMART_TYPERS.COLORED_GRADIENT_DESC}
         value={getSetting('colorGradient', false)}
         onChange={(checked) => {
@@ -68,7 +82,7 @@ module.exports = class Settings extends React.PureComponent {
 
           return toggleSetting('colorGradient', false);
         }}
-        disabled={getSetting('userAvatars', false)}
+        disabled={getSetting('userAvatars', false) ? true : !getSetting('color', true)}
       >
         {Messages.SMART_TYPERS.COLORED_GRADIENT}
       </SwitchItem>
@@ -90,7 +104,7 @@ module.exports = class Settings extends React.PureComponent {
       <SliderInput
         stickToMarkers
         initialValue={getSetting('maxTypingUsers', 3)}
-        markers={[ 3, 4, 5, 6, 7, 8 ]}
+        markers={[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]}
         className='smartTypers-slider'
         onMarkerRender={marker => marker === 3 ? Messages.DEFAULT : Messages.NUM_USERS.format({ num: marker })}
         defaultValue={getSetting('maxTypingUsers', 3)}

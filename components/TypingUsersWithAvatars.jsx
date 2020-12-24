@@ -1,6 +1,6 @@
-const { React, getModule, getModuleByDisplayName } = require('powercord/webpack');
+const { React, getModule, getModuleByDisplayName } = require('@vizality/webpack');
 
-const Avatar = getModule([ 'AnimatedAvatar' ], false);
+const Avatar = getModule('AnimatedAvatar', false);
 const Tooltip = getModuleByDisplayName('Tooltip', false);
 const DiscordTag = getModuleByDisplayName('DiscordTag', false);
 const VoiceUserSummaryItem = getModuleByDisplayName('VoiceUserSummaryItem', false);
@@ -37,7 +37,7 @@ module.exports = class TypingUsers extends React.PureComponent {
   }
 
   renderTypingUsers (...args) {
-    const maxTypingUsers = this.props.main.settings.get('maxTypingUsers', -1);
+    const maxTypingUsers = this.props.main.settings.get('maxTypingUsers', -1) + 1;
     const additionalUsers = this.props.typingUsers.slice(maxTypingUsers, this.props.typingUsers.length);
 
     return React.createElement(Tooltip, {
