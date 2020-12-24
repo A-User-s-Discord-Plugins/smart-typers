@@ -1,10 +1,6 @@
 {
   "name": "Smart Typers",
-<<<<<<< HEAD
   "version": "0.3.9A",
-=======
-  "version": "0.3.9",
->>>>>>> 7fb35d2362edf79c868378a2b2ad1823306ca4cd
   "description": "Provides enhanced functionality and personalization to the typing users component.",
   "author": "M|-|4r13y ツ#1051, A user#8169",
   "license": "MIT"
