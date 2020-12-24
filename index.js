@@ -1,8 +1,15 @@
+<<<<<<< HEAD
 /* eslint-disable object-property-newline */
 const { Plugin } = require('@vizality/entities');
 const { React, getModuleByDisplayName, getModule, contextMenu, i18n: { _proxyContext: { defaultMessages }, Messages }, constants } = require('@vizality/webpack');
 const { react: { findInReactTree } } = require('@vizality/util');
 const { patch, unpatch } = require('@vizality/patcher');
+=======
+const { Plugin } = require('powercord/entities');
+const { React, getModuleByDisplayName, getModule, contextMenu, i18n: { _proxyContext: { defaultMessages }, Messages }, constants } = require('powercord/webpack');
+const { findInReactTree } = require('powercord/util');
+const { inject, uninject } = require('powercord/injector');
+>>>>>>> 7fb35d2362edf79c868378a2b2ad1823306ca4cd
 
 const TypingUsersWithAvatars = require('./components/TypingUsersWithAvatars');
 const Settings = require('./components/Settings');
@@ -248,7 +255,11 @@ module.exports = class SmartTypers extends Plugin {
     }
 
     const UserPopout = getModuleByDisplayName('UserPopout', false);
+<<<<<<< HEAD
     const PopoutDispatcher = getModule( 'openPopout' , false);
+=======
+    const PopoutDispatcher = getModule([ 'openPopout' ], false);
+>>>>>>> 7fb35d2362edf79c868378a2b2ad1823306ca4cd
 
     if (this.settings.get('userPopout', true) && event.target) {
       PopoutDispatcher.openPopout(event.target, {
@@ -273,8 +284,12 @@ module.exports = class SmartTypers extends Plugin {
 
     if (this.settings.get('userContextMenu', true)) {
       const UserContextMenu = guildId ? GuildChannelUserContextMenu : GroupDMUserContextMenu;
+<<<<<<< HEAD
       const defaultProps = Object.assign({ user }, guildId ? {
         guildId,
+=======
+      const defaultProps = Object.assign({ user }, guildId ? { guildId,
+>>>>>>> 7fb35d2362edf79c868378a2b2ad1823306ca4cd
         channelId: channel.id,
         showMediaItems: false,
         popoutPosition: 'top'
