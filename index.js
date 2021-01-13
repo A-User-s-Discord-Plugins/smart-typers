@@ -21,17 +21,10 @@ module.exports = class SmartTypers extends Plugin {
     return window.DiscordNative.crashReporter.getMetadata().user_id;
   }
 
-  async onStart () {
+  async start () {
     this.injectStyles('style.css');
     vizality.api.i18n.injectAllStrings(i18n);
-    vizality.api.settings.registerAddonSettings({
-      id: this.addonId,
-      heading: 'Smart Typers',
-      render: (props) => React.createElement(Settings, {
-        main: this,
-        ...props
-      })
-    })
+    this.registerSettings(Settings)
 
     const { getSetting } = vizality.api.settings._fluxProps(this.addonId);
 
@@ -232,9 +225,7 @@ module.exports = class SmartTypers extends Plugin {
      */
   }
 
-  onStop () {
-    vizality.api.settings.unregisterSettings('smart-typers');
-
+  stop () {
     unpatch('smartTypers-logic');
     unpatch('smartTypers-self');
   }

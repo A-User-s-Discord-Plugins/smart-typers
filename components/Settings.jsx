@@ -38,7 +38,7 @@ module.exports = class Settings extends React.PureComponent {
   }
 
   renderSettings () {
-    const { getSetting, toggleSetting, updateSetting } = this.props;
+    const { getSetting, toggleSetting, updateSetting } = vizality.api.settings._fluxProps(this.addonId);
 
     return <>
       <FormTitle>{Messages.APPEARANCE}</FormTitle>
@@ -48,7 +48,7 @@ module.exports = class Settings extends React.PureComponent {
         onChange={() => toggleSetting('userAvatars', false)}
       >
         {Messages.SMART_TYPERS.USER_AVATARS}
-        <div className='smartTypers-beta'>Beta</div>
+        <sup className='beta-3smTDE'>Beta</sup>
       </SwitchItem>
       <SwitchItem
         note={Messages.SMART_TYPERS.HIDE_EMOJIS_DESC}

@@ -1,6 +1,8 @@
 const { React, getModule, getModuleByDisplayName } = require('@vizality/webpack');
 const { Card } = require('@vizality/components');
 
+const { getId: currentUserId } = getModule('initialize', 'getFingerprint')
+
 module.exports = class Preview extends React.PureComponent {
   constructor () {
     super();
@@ -33,7 +35,8 @@ module.exports = class Preview extends React.PureComponent {
   }
 
   fetchPreviewUsers () {
-    const cachedUsers = Object.values(getModule([ 'getUsers' ], false).getUsers()).filter(user => user.id !== this.props.main.currentUserId);
+    const { settings } = vizality.manager.plugins.items.get("smart-typers")
+    const cachedUsers = Object.values(getModule(['getUsers'], false).getUsers()).filter(user => user.id !== currentUserId());
     const getRandomUserId = () => cachedUsers[Math.floor(Math.random() * cachedUsers.length)].id;
     const users = {};
 
@@ -49,7 +52,7 @@ module.exports = class Preview extends React.PureComponent {
       users[id] = null;
     }
 
-    const maxTypingUsers = this.props.main.settings.get('maxTypingUsers', 3);
+    const maxTypingUsers = settings.get('maxTypingUsers', 3);
     if (currentRotation === 3 && maxTypingUsers > 3) {
       for (let i = currentRotation + 1; i < 10; i++) {
         users[getRandomUserId()] = null;
